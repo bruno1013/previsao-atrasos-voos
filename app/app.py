@@ -8,6 +8,7 @@
 
 import json
 import warnings
+from pathlib import Path
 
 import joblib
 import numpy as np
@@ -147,6 +148,8 @@ THRESHOLD_DEL = 0.613
 # ─────────────────────────────────────────────────────────────────────────────
 # CARREGAMENTO
 # ─────────────────────────────────────────────────────────────────────────────
+_DIR = Path(__file__).parent
+
 def _load_model_safe(path):
     try:
         m = joblib.load(path)
@@ -160,10 +163,10 @@ def _load_model_safe(path):
 
 @st.cache_resource(show_spinner="A inicializar modelos...")
 def carregar_modelos():
-    m_canc = _load_model_safe("modelo_cancelamentos_voos.pkl")
-    m_del  = _load_model_safe("modelo_atrasos_voos.pkl")
+    m_canc = _load_model_safe(_DIR / "modelo_cancelamentos_voos.pkl")
+    m_del  = _load_model_safe(_DIR / "modelo_atrasos_voos.pkl")
     try:
-        with open("feature_names.json") as f:
+        with open(_DIR / "feature_names.json") as f:
             features = [x for x in json.load(f) if x != "is_delayed"]
     except FileNotFoundError:
         st.error("feature_names.json não encontrado."); st.stop()
