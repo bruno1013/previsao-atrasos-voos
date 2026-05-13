@@ -242,8 +242,9 @@ def gauge_chart(prob):
                         {"range":[60,100],"color":"rgba(239,68,68,.08)"}],
                "threshold":{"line":{"color":"#E8EDF8","width":2},"thickness":.7,"value":prob*100}},
     ))
-    fig.update_layout(height=230,margin=dict(t=20,b=10,l=30,r=30),
-                      **{k:v for k,v in PL.items() if k != "margin"})
+    skip = {"margin", "title_font"}
+    fig.update_layout(height=230, margin=dict(t=20,b=10,l=30,r=30), title="",
+                      **{k:v for k,v in PL.items() if k not in skip})
     return fig
 
 # ─────────────────────────────────────────────────────────────────────────────
