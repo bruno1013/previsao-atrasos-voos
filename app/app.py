@@ -231,6 +231,7 @@ def gauge_chart(prob):
     fig = go.Figure(go.Indicator(
         mode="gauge+number",
         value=round(prob*100, 1),
+        title={"text":""},
         number={"suffix":"%","font":{"size":40,"family":"JetBrains Mono","color":"#E8EDF8"}},
         gauge={"axis":{"range":[0,100],"tickcolor":"#3D506B","tickwidth":1,
                        "tickfont":{"family":"JetBrains Mono","size":9,"color":"#6B7FA3"}},
