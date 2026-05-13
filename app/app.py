@@ -172,20 +172,33 @@ def carregar_modelos():
         st.error("feature_names.json não encontrado."); st.stop()
     return m_canc, m_del, features
 
-@st.cache_data(show_spinner="A carregar dados...")
-def carregar_dados():
-    try:
-        df_temp = pd.read_csv("data/flight_data_processed.csv")
-        if "origin" not in df_temp.columns:
-            cols_orig = [c for c in df_temp.columns if c.startswith("origin_")]
-            if cols_orig:
-                df_temp["origin"] = df_temp[cols_orig].idxmax(axis=1).str.replace("origin_","",regex=False)
-        return df_temp
-    except FileNotFoundError:
-        st.error("data/flight_data_processed.csv não encontrado."); st.stop()
-
 modelo, modelo_del, feature_names = carregar_modelos()
-df = carregar_dados()
+
+# Dados do dashboard pré-agregados (evita carregar o CSV de 697MB em produção)
+_DADOS = {
+ 'all': {'total':1041151,'canc':15905,'taxa':1.5276,'top_ap':'BRW','top_taxa':15.5172,
+  'by_month':[{'month':1,'sum':13905,'count':540773,'taxa':2.5713},{'month':2,'sum':2000,'count':500378,'taxa':0.3997}],
+  'by_week':[{'day_of_week':1,'sum':3138,'count':164293,'taxa':1.91},{'day_of_week':2,'sum':3298,'count':150995,'taxa':2.1842},{'day_of_week':3,'sum':1751,'count':154351,'taxa':1.1344},{'day_of_week':4,'sum':1611,'count':149688,'taxa':1.0762},{'day_of_week':5,'sum':2214,'count':148173,'taxa':1.4942},{'day_of_week':6,'sum':1758,'count':126933,'taxa':1.385},{'day_of_week':7,'sum':2135,'count':146718,'taxa':1.4552}],
+  'by_dom':[{'day_of_month':1,'sum':151,'count':35655,'taxa':0.4235},{'day_of_month':2,'sum':82,'count':37432,'taxa':0.2191},{'day_of_month':3,'sum':165,'count':33961,'taxa':0.4859},{'day_of_month':4,'sum':333,'count':36286,'taxa':0.9177},{'day_of_month':5,'sum':130,'count':36442,'taxa':0.3567},{'day_of_month':6,'sum':343,'count':33207,'taxa':1.0329},{'day_of_month':7,'sum':479,'count':35342,'taxa':1.3553},{'day_of_month':8,'sum':529,'count':36827,'taxa':1.4364},{'day_of_month':9,'sum':967,'count':35026,'taxa':2.7608},{'day_of_month':10,'sum':451,'count':32238,'taxa':1.399},{'day_of_month':11,'sum':345,'count':36404,'taxa':0.9477},{'day_of_month':12,'sum':1178,'count':35923,'taxa':3.2792},{'day_of_month':13,'sum':1152,'count':30780,'taxa':3.7427},{'day_of_month':14,'sum':963,'count':33884,'taxa':2.842},{'day_of_month':15,'sum':1674,'count':36325,'taxa':4.6084},{'day_of_month':16,'sum':1329,'count':34810,'taxa':3.8179},{'day_of_month':17,'sum':716,'count':32974,'taxa':2.1714},{'day_of_month':18,'sum':475,'count':36904,'taxa':1.2871},{'day_of_month':19,'sum':692,'count':37446,'taxa':1.848},{'day_of_month':20,'sum':266,'count':33156,'taxa':0.8023},{'day_of_month':21,'sum':281,'count':36405,'taxa':0.7719},{'day_of_month':22,'sum':573,'count':37430,'taxa':1.5309},{'day_of_month':23,'sum':434,'count':35538,'taxa':1.2212},{'day_of_month':24,'sum':512,'count':33200,'taxa':1.5422},{'day_of_month':25,'sum':615,'count':37655,'taxa':1.6332},{'day_of_month':26,'sum':342,'count':37729,'taxa':0.9065},{'day_of_month':27,'sum':356,'count':33090,'taxa':1.0759},{'day_of_month':28,'sum':152,'count':36492,'taxa':0.4165},{'day_of_month':29,'sum':108,'count':19561,'taxa':0.5521},{'day_of_month':30,'sum':51,'count':16344,'taxa':0.312},{'day_of_month':31,'sum':61,'count':16685,'taxa':0.3656}],
+  'top12':[{'origin':'BRW','sum':9,'count':58,'taxa':15.5172},{'origin':'DVL','sum':15,'count':108,'taxa':13.8889},{'origin':'JMS','sum':15,'count':108,'taxa':13.8889},{'origin':'PAE','sum':27,'count':223,'taxa':12.1076},{'origin':'ALW','sum':14,'count':116,'taxa':12.069},{'origin':'CMX','sum':12,'count':113,'taxa':10.6195},{'origin':'OME','sum':6,'count':58,'taxa':10.3448},{'origin':'OTZ','sum':6,'count':58,'taxa':10.3448},{'origin':'PLN','sum':10,'count':98,'taxa':10.2041},{'origin':'JST','sum':12,'count':118,'taxa':10.1695},{'origin':'MCW','sum':10,'count':100,'taxa':10.0},{'origin':'BIH','sum':9,'count':102,'taxa':8.8235}]},
+ 1: {'total':540773,'canc':13905,'taxa':2.5713,'top_ap':'PAE','top_taxa':23.2143,
+  'by_month':[{'month':1,'sum':13905,'count':540773,'taxa':2.5713}],
+  'by_week':[{'day_of_week':1,'sum':2834,'count':89572,'taxa':3.1639},{'day_of_week':2,'sum':2687,'count':83796,'taxa':3.2066},{'day_of_week':3,'sum':1653,'count':85159,'taxa':1.9411},{'day_of_week':4,'sum':1410,'count':73462,'taxa':1.9194},{'day_of_week':5,'sum':2038,'count':72819,'taxa':2.7987},{'day_of_week':6,'sum':1506,'count':63034,'taxa':2.3892},{'day_of_week':7,'sum':1777,'count':72931,'taxa':2.4365}],
+  'by_dom':[{'day_of_month':1,'sum':17,'count':17264,'taxa':0.0985},{'day_of_month':2,'sum':25,'count':18976,'taxa':0.1317},{'day_of_month':3,'sum':19,'count':18520,'taxa':0.1026},{'day_of_month':4,'sum':49,'count':18048,'taxa':0.2715},{'day_of_month':5,'sum':17,'count':18108,'taxa':0.0939},{'day_of_month':6,'sum':327,'count':16890,'taxa':1.9361},{'day_of_month':7,'sum':458,'count':18650,'taxa':2.4558},{'day_of_month':8,'sum':498,'count':18314,'taxa':2.7192},{'day_of_month':9,'sum':949,'count':16454,'taxa':5.7676},{'day_of_month':10,'sum':437,'count':16675,'taxa':2.6207},{'day_of_month':11,'sum':331,'count':18376,'taxa':1.8013},{'day_of_month':12,'sum':1070,'count':17724,'taxa':6.037},{'day_of_month':13,'sum':686,'count':15156,'taxa':4.5263},{'day_of_month':14,'sum':948,'count':17122,'taxa':5.5367},{'day_of_month':15,'sum':1655,'count':17313,'taxa':9.5593},{'day_of_month':16,'sum':1239,'count':15658,'taxa':7.9129},{'day_of_month':17,'sum':640,'count':16552,'taxa':3.8666},{'day_of_month':18,'sum':433,'count':18496,'taxa':2.341},{'day_of_month':19,'sum':638,'count':18363,'taxa':3.4744},{'day_of_month':20,'sum':251,'count':15482,'taxa':1.6212},{'day_of_month':21,'sum':260,'count':18524,'taxa':1.4036},{'day_of_month':22,'sum':557,'count':18308,'taxa':3.0424},{'day_of_month':23,'sum':423,'count':16364,'taxa':2.5849},{'day_of_month':24,'sum':496,'count':16727,'taxa':2.9653},{'day_of_month':25,'sum':597,'count':18542,'taxa':3.2197},{'day_of_month':26,'sum':313,'count':18624,'taxa':1.6806},{'day_of_month':27,'sum':242,'count':15506,'taxa':1.5607},{'day_of_month':28,'sum':111,'count':18635,'taxa':0.5957},{'day_of_month':29,'sum':107,'count':18373,'taxa':0.5824},{'day_of_month':30,'sum':51,'count':16344,'taxa':0.312},{'day_of_month':31,'sum':61,'count':16685,'taxa':0.3656}],
+  'top12':[{'origin':'PAE','sum':26,'count':112,'taxa':23.2143},{'origin':'PLN','sum':10,'count':50,'taxa':20.0},{'origin':'ALW','sum':11,'count':60,'taxa':18.3333},{'origin':'CMX','sum':10,'count':58,'taxa':17.2414},{'origin':'DVL','sum':9,'count':56,'taxa':16.0714},{'origin':'MCW','sum':8,'count':52,'taxa':15.3846},{'origin':'JST','sum':9,'count':62,'taxa':14.5161},{'origin':'JMS','sum':8,'count':56,'taxa':14.2857},{'origin':'DDC','sum':7,'count':51,'taxa':13.7255},{'origin':'DEC','sum':11,'count':81,'taxa':13.5802},{'origin':'FOD','sum':7,'count':52,'taxa':13.4615},{'origin':'JLN','sum':6,'count':51,'taxa':11.7647}]},
+ 2: {'total':500378,'canc':2000,'taxa':0.3997,'top_ap':'JMS','top_taxa':13.4615,
+  'by_month':[{'month':2,'sum':2000,'count':500378,'taxa':0.3997}],
+  'by_week':[{'day_of_week':1,'sum':304,'count':74721,'taxa':0.4068},{'day_of_week':2,'sum':611,'count':67199,'taxa':0.9092},{'day_of_week':3,'sum':98,'count':69192,'taxa':0.1416},{'day_of_week':4,'sum':201,'count':76226,'taxa':0.2637},{'day_of_week':5,'sum':176,'count':75354,'taxa':0.2336},{'day_of_week':6,'sum':252,'count':63899,'taxa':0.3944},{'day_of_week':7,'sum':358,'count':73787,'taxa':0.4852}],
+  'by_dom':[{'day_of_month':1,'sum':134,'count':18391,'taxa':0.7286},{'day_of_month':2,'sum':57,'count':18456,'taxa':0.3088},{'day_of_month':3,'sum':146,'count':15441,'taxa':0.9455},{'day_of_month':4,'sum':284,'count':18238,'taxa':1.5572},{'day_of_month':5,'sum':113,'count':18334,'taxa':0.6163},{'day_of_month':6,'sum':16,'count':16317,'taxa':0.0981},{'day_of_month':7,'sum':21,'count':16692,'taxa':0.1258},{'day_of_month':8,'sum':31,'count':18513,'taxa':0.1674},{'day_of_month':9,'sum':18,'count':18572,'taxa':0.0969},{'day_of_month':10,'sum':14,'count':15563,'taxa':0.09},{'day_of_month':11,'sum':14,'count':18028,'taxa':0.0777},{'day_of_month':12,'sum':108,'count':18199,'taxa':0.5934},{'day_of_month':13,'sum':466,'count':15624,'taxa':2.9826},{'day_of_month':14,'sum':15,'count':16762,'taxa':0.0895},{'day_of_month':15,'sum':19,'count':19012,'taxa':0.0999},{'day_of_month':16,'sum':90,'count':19152,'taxa':0.4699},{'day_of_month':17,'sum':76,'count':16422,'taxa':0.4628},{'day_of_month':18,'sum':42,'count':18408,'taxa':0.2282},{'day_of_month':19,'sum':54,'count':19083,'taxa':0.283},{'day_of_month':20,'sum':15,'count':17674,'taxa':0.0849},{'day_of_month':21,'sum':21,'count':17881,'taxa':0.1174},{'day_of_month':22,'sum':16,'count':19122,'taxa':0.0837},{'day_of_month':23,'sum':11,'count':19174,'taxa':0.0574},{'day_of_month':24,'sum':16,'count':16473,'taxa':0.0971},{'day_of_month':25,'sum':18,'count':19113,'taxa':0.0942},{'day_of_month':26,'sum':29,'count':19105,'taxa':0.1518},{'day_of_month':27,'sum':114,'count':17584,'taxa':0.6483},{'day_of_month':28,'sum':41,'count':17857,'taxa':0.2296},{'day_of_month':29,'sum':1,'count':1188,'taxa':0.0842}],
+  'top12':[{'origin':'JMS','sum':7,'count':52,'taxa':13.4615},{'origin':'DVL','sum':6,'count':52,'taxa':11.5385},{'origin':'DIK','sum':4,'count':50,'taxa':8.0},{'origin':'SBA','sum':30,'count':487,'taxa':6.1602},{'origin':'ALW','sum':3,'count':56,'taxa':5.3571},{'origin':'CDV','sum':3,'count':56,'taxa':5.3571},{'origin':'JST','sum':3,'count':56,'taxa':5.3571},{'origin':'PSG','sum':3,'count':56,'taxa':5.3571},{'origin':'XWA','sum':7,'count':135,'taxa':5.1852},{'origin':'ASE','sum':39,'count':834,'taxa':4.6763},{'origin':'CYS','sum':2,'count':52,'taxa':3.8462},{'origin':'CMX','sum':2,'count':55,'taxa':3.6364}]},
+}
+
+def _resolve_dados(meses_sel):
+    if not meses_sel or set(meses_sel) == {1, 2}:
+        return _DADOS['all']
+    if meses_sel == [1] or meses_sel == (1,):
+        return _DADOS[1]
+    return _DADOS[2]
 
 # ─────────────────────────────────────────────────────────────────────────────
 # AUXILIARES
@@ -247,8 +260,7 @@ with st.sidebar:
     st.divider()
     if "Dashboard" in pagina:
         st.markdown('<div class="sl">Filtros</div>', unsafe_allow_html=True)
-        meses_disp = sorted(df["month"].dropna().unique().astype(int))
-        meses_sel  = st.multiselect("Meses", options=meses_disp, default=meses_disp,
+        meses_sel  = st.multiselect("Meses", options=[1, 2], default=[1, 2],
                                     format_func=lambda m: NOMES_MES.get(m, str(m))[:3])
     else:
         meses_sel = None
@@ -265,13 +277,9 @@ if "Dashboard" in pagina:
                 '<div class="ps">Análise exploratória · Dataset BTS 2024 · 1 041 151 voos comerciais EUA (Jan–Fev)</div>',
                 unsafe_allow_html=True)
 
-    df_f = df[df["month"].isin(meses_sel)] if meses_sel else df
-    total = len(df_f)
-    canc  = int(df_f["cancelled"].sum())
-    taxa  = canc / total * 100 if total > 0 else 0
-    ap_v  = df_f.groupby("origin")["cancelled"].agg(["sum","count"]).query("count>=50")
-    top_ap   = (ap_v["sum"] / ap_v["count"]).idxmax() if not ap_v.empty else "N/A"
-    top_taxa = (ap_v["sum"] / ap_v["count"]).max() * 100 if not ap_v.empty else 0
+    d = _resolve_dados(meses_sel)
+    total    = d["total"]; canc = d["canc"]; taxa = d["taxa"]
+    top_ap   = d["top_ap"]; top_taxa = d["top_taxa"]
 
     k1, k2, k3, k4 = st.columns(4)
     k1.metric("Voos na amostra", f"{total:,}")
@@ -283,8 +291,7 @@ if "Dashboard" in pagina:
     col_a, col_b = st.columns(2, gap="large")
     with col_a:
         st.markdown('<div class="sl">Taxa de cancelamento por mês</div>', unsafe_allow_html=True)
-        tm = (df_f.groupby("month")["cancelled"].agg(["sum","count"])
-              .assign(taxa=lambda x: x["sum"] / x["count"] * 100).reset_index())
+        tm = pd.DataFrame(d["by_month"])
         tm["mes"] = tm["month"].map(lambda m: NOMES_MES.get(int(m), str(m))[:3])
         fig_m = px.bar(tm, x="mes", y="taxa", color="taxa",
                        color_continuous_scale=[[0,"#162035"],[.4,"#1565FF"],[1,"#00D4FF"]],
@@ -301,9 +308,7 @@ if "Dashboard" in pagina:
 
     with col_b:
         st.markdown('<div class="sl">Top 12 aeroportos — taxa de cancelamento</div>', unsafe_allow_html=True)
-        t12 = (df_f.groupby("origin")["cancelled"].agg(["sum","count"]).query("count>=50")
-               .assign(taxa=lambda x: x["sum"] / x["count"] * 100)
-               .nlargest(12, "taxa").reset_index())
+        t12 = pd.DataFrame(d["top12"])
         fig_a = px.bar(t12, x="taxa", y="origin", orientation="h", color="taxa",
                        color_continuous_scale=[[0,"#162035"],[.5,C_AMBER],[1,C_RED]],
                        text_auto=".2f")
@@ -337,9 +342,8 @@ if "Dashboard" in pagina:
 
     with col_d:
         st.markdown('<div class="sl">Padrão semanal de cancelamentos</div>', unsafe_allow_html=True)
-        td = (df_f.groupby("day_of_week")["cancelled"].agg(["sum","count"])
-              .assign(taxa=lambda x: x["sum"] / x["count"] * 100).reset_index())
-        td["dia"] = td["day_of_week"].map(lambda d: NOMES_DIA.get(int(d), str(d))[:3])
+        td = pd.DataFrame(d["by_week"])
+        td["dia"] = td["day_of_week"].map(lambda dw: NOMES_DIA.get(int(dw), str(dw))[:3])
         fig_d = go.Figure(go.Scatter(
             x=td["dia"], y=td["taxa"], mode="lines+markers",
             line=dict(color=C_CYAN, width=2.5, shape="spline"),
@@ -352,44 +356,26 @@ if "Dashboard" in pagina:
                                        tickfont=dict(family="JetBrains Mono", size=9)))
         st.plotly_chart(fig_d, use_container_width=True)
 
-    # Gráfico de dia do mês — feature mais importante segundo SHAP
-    if "day_of_month" in df_f.columns:
-        st.markdown('<div class="sl">Taxa de cancelamento por dia do mês · feature mais importante (SHAP)</div>',
-                    unsafe_allow_html=True)
-        tdom = (df_f.groupby("day_of_month")["cancelled"].agg(["sum","count"])
-                .assign(taxa=lambda x: x["sum"] / x["count"] * 100).reset_index())
-        media_dom = tdom["taxa"].mean()
-        fig_dom = go.Figure()
-        fig_dom.add_hline(y=media_dom, line_dash="dash", line_color="#3D506B",
-                          annotation_text=f"Média {media_dom:.2f}%",
-                          annotation_font=dict(family="JetBrains Mono", size=9, color="#6B7FA3"))
-        fig_dom.add_trace(go.Bar(
-            x=tdom["day_of_month"], y=tdom["taxa"],
-            marker=dict(
-                color=tdom["taxa"],
-                colorscale=[[0,"#162035"],[0.4,"#1565FF"],[1,"#EF4444"]],
-                line=dict(width=0)),
-            hovertemplate="Dia %{x}: %{y:.2f}%<extra></extra>"))
-        fig_dom.update_layout(**PL, title="Taxa de cancelamento por dia do mês",
-                              xaxis=dict(title="Dia do mês", dtick=1,
-                                         tickfont=dict(family="JetBrains Mono", size=9)),
-                              yaxis=dict(title="Taxa (%)", gridcolor="rgba(21,101,255,.06)",
-                                         tickfont=dict(family="JetBrains Mono", size=9)))
-        st.plotly_chart(fig_dom, use_container_width=True)
-
-    if "distance" in df_f.columns:
-        st.markdown('<div class="sl">Distribuição de distância · cancelados vs operacionais</div>',
-                    unsafe_allow_html=True)
-        fig_dist = px.histogram(df_f, x="distance", color="cancelled", barmode="overlay",
-                                nbins=60, opacity=.75,
-                                color_discrete_map={0:C_GREEN, 1:C_RED},
-                                labels={"distance":"Distância (milhas)","cancelled":""})
-        fig_dist.update_traces(marker_line_width=0)
-        fig_dist.update_layout(**PL, title="Distribuição de distância · cancelados vs operacionais",
-                               xaxis=dict(gridcolor="rgba(21,101,255,.06)"),
-                               yaxis=dict(gridcolor="rgba(21,101,255,.06)"))
-        fig_dist.for_each_trace(lambda t: t.update(name="Cancelado" if t.name=="1" else "Operacional"))
-        st.plotly_chart(fig_dist, use_container_width=True)
+    st.markdown('<div class="sl">Taxa de cancelamento por dia do mês · feature mais importante (SHAP)</div>',
+                unsafe_allow_html=True)
+    tdom = pd.DataFrame(d["by_dom"])
+    media_dom = tdom["taxa"].mean()
+    fig_dom = go.Figure()
+    fig_dom.add_hline(y=media_dom, line_dash="dash", line_color="#3D506B",
+                      annotation_text=f"Média {media_dom:.2f}%",
+                      annotation_font=dict(family="JetBrains Mono", size=9, color="#6B7FA3"))
+    fig_dom.add_trace(go.Bar(
+        x=tdom["day_of_month"], y=tdom["taxa"],
+        marker=dict(color=tdom["taxa"],
+                    colorscale=[[0,"#162035"],[0.4,"#1565FF"],[1,"#EF4444"]],
+                    line=dict(width=0)),
+        hovertemplate="Dia %{x}: %{y:.2f}%<extra></extra>"))
+    fig_dom.update_layout(**PL, title="Taxa de cancelamento por dia do mês",
+                          xaxis=dict(title="Dia do mês", dtick=1,
+                                     tickfont=dict(family="JetBrains Mono", size=9)),
+                          yaxis=dict(title="Taxa (%)", gridcolor="rgba(21,101,255,.06)",
+                                     tickfont=dict(family="JetBrains Mono", size=9)))
+    st.plotly_chart(fig_dom, use_container_width=True)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # PREVISÃO
@@ -414,7 +400,7 @@ elif "Previsão" in pagina:
                                           format_func=lambda d: NOMES_DIA[d], key=f"ds_{form_key}")
             with c2:
                 st.markdown('<div class="sl">Dados do voo</div>', unsafe_allow_html=True)
-                aeroportos = sorted(df["origin"].dropna().unique())
+                aeroportos = sorted([c.replace("origin_","") for c in feature_names if c.startswith("origin_")])
                 aeroporto  = st.selectbox("Aeroporto de origem (IATA)", options=aeroportos,
                                           key=f"ap_{form_key}")
                 distancia  = st.number_input("Distância (milhas)", min_value=50, max_value=5000,
