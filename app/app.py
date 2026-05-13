@@ -224,13 +224,11 @@ def construir_entrada(mes, dia_mes, dia_semana, aeroporto, distancia):
         e[ap] = 1
     return e.astype("float32")
 
-def cor_risco(prob, threshold):
-    return C_GREEN if prob < threshold * 0.5 else (C_AMBER if prob < threshold else C_RED)
+def cor_risco(prob):
+    return C_GREEN if prob < 0.4 else (C_AMBER if prob < 0.8 else C_RED)
 
 def gauge_chart(prob, threshold):
-    t  = threshold * 100
-    t2 = t * 0.5
-    cor = cor_risco(prob, threshold)
+    cor = cor_risco(prob)
     fig = go.Figure(go.Indicator(
         mode="gauge+number",
         value=round(prob*100, 1),
@@ -240,10 +238,11 @@ def gauge_chart(prob, threshold):
                        "tickfont":{"family":"JetBrains Mono","size":9,"color":"#6B7FA3"}},
                "bar":{"color":cor,"thickness":0.22},
                "bgcolor":"rgba(0,0,0,0)","borderwidth":0,
-               "steps":[{"range":[0, t2],  "color":"rgba(16,185,129,.08)"},
-                        {"range":[t2, t],   "color":"rgba(245,158,11,.08)"},
-                        {"range":[t, 100],  "color":"rgba(239,68,68,.08)"}],
-               "threshold":{"line":{"color":"#00D4FF","width":2},"thickness":.7,"value":t}},
+               "steps":[{"range":[0,  40], "color":"rgba(16,185,129,.08)"},
+                        {"range":[40, 80],  "color":"rgba(245,158,11,.08)"},
+                        {"range":[80, 100], "color":"rgba(239,68,68,.08)"}],
+               "threshold":{"line":{"color":"#00D4FF","width":2},"thickness":.7,
+                            "value": threshold * 100}},
     ))
     skip = {"margin", "title_font"}
     fig.update_layout(height=230, margin=dict(t=20,b=10,l=30,r=30), title="",
@@ -444,16 +443,19 @@ elif "Previsão" in pagina:
         st.divider()
         r1, r2 = st.columns([1, 1], gap="large")
         with r1:
-            acima = prob >= threshold
-            lbl  = label_pos if acima else label_neg
-            clr  = C_RED if acima else (C_AMBER if prob >= threshold * 0.5 else C_GREEN)
-            desc = ("O modelo identificou padrões históricos associados a este evento. "
-                    "Probabilidade acima do limiar de decisão."
-                    if acima else
-                    "Sem padrões de risco elevado identificados. "
-                    "Existe sempre risco residual não capturado pelo modelo.")
-            brd = "rgba(239,68,68,.4)" if acima else ("rgba(245,158,11,.4)" if prob >= threshold * 0.5 else "rgba(16,185,129,.4)")
-            shd = "rgba(239,68,68,.08)" if acima else ("rgba(245,158,11,.08)" if prob >= threshold * 0.5 else "rgba(16,185,129,.08)")
+            alto  = prob >= 0.8
+            medio = 0.4 <= prob < 0.8
+            lbl  = label_pos if alto else label_neg
+            clr  = C_RED if alto else (C_AMBER if medio else C_GREEN)
+            desc = ("O modelo identificou padrões históricos de risco elevado para este voo. "
+                    "Probabilidade acima do limiar de alerta."
+                    if alto else
+                    ("Risco moderado identificado. Probabilidade acima da média global."
+                     if medio else
+                     "Sem padrões de risco elevado identificados. "
+                     "Existe sempre risco residual não capturado pelo modelo."))
+            brd = "rgba(239,68,68,.4)" if alto else ("rgba(245,158,11,.4)" if medio else "rgba(16,185,129,.4)")
+            shd = "rgba(239,68,68,.08)" if alto else ("rgba(245,158,11,.08)" if medio else "rgba(16,185,129,.08)")
             st.markdown(
                 f'<div style="background:#0F1729;border:1px solid {brd};box-shadow:0 0 24px {shd};'
                 f'border-radius:12px;padding:1.4rem 1.6rem;margin-bottom:1rem">'
@@ -490,14 +492,13 @@ elif "Previsão" in pagina:
 
         with r2:
             st.plotly_chart(gauge_chart(prob, threshold), use_container_width=True)
-            nivel = "ALTO" if prob >= threshold else ("MÉDIO" if prob >= threshold * 0.5 else "BAIXO")
-            cn    = C_RED  if prob >= threshold else (C_AMBER if prob >= threshold * 0.5 else C_GREEN)
+            nivel = "ALTO" if prob >= 0.8 else ("MÉDIO" if prob >= 0.4 else "BAIXO")
+            cn    = C_RED  if prob >= 0.8 else (C_AMBER if prob >= 0.4 else C_GREEN)
             pct   = prob * 100
-            t50   = threshold * 50
             bars  = [
-                ("rgba(16,185,129,.7)" if pct < t50             else "rgba(16,185,129,.15)"),
-                ("rgba(245,158,11,.7)" if t50<=pct<threshold*100 else "rgba(245,158,11,.15)"),
-                ("rgba(239,68,68,.7)"  if pct >= threshold*100   else "rgba(239,68,68,.15)"),
+                ("rgba(16,185,129,.7)" if pct < 40  else "rgba(16,185,129,.15)"),
+                ("rgba(245,158,11,.7)" if 40<=pct<80 else "rgba(245,158,11,.15)"),
+                ("rgba(239,68,68,.7)"  if pct >= 80  else "rgba(239,68,68,.15)"),
             ]
             st.markdown(
                 f'<div style="background:#0F1729;border:1px solid rgba(21,101,255,.15);'
