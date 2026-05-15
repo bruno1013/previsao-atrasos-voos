@@ -16,6 +16,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
+import streamlit.components.v1 as components
 
 warnings.filterwarnings("ignore")
 
@@ -87,6 +88,10 @@ hr{border:none!important;border-top:1px solid var(--border)!important;margin:1.5
 [data-testid="stRadio"] [aria-checked="true"]+label,[data-testid="stRadio"] [aria-checked="true"]~div label{
   color:var(--cyan)!important;font-weight:600!important}
 #MainMenu,footer,header{visibility:hidden!important}
+[data-testid="collapsedControl"]{display:none!important}
+[data-testid="stSidebarCollapseButton"]{display:none!important}
+section[data-testid="stSidebar"]{transform:translateX(0)!important;min-width:244px!important;width:244px!important}
+section[data-testid="stSidebar"][aria-expanded="false"]{margin-left:0!important;transform:translateX(0)!important;display:block!important}
 [data-testid="stDecoration"]{display:none!important}
 .ph{border-left:3px solid var(--cyan);padding:.1rem 0 .1rem 1rem;margin-bottom:.3rem}
 .ph h1{font-family:var(--mono)!important;font-size:1.55rem!important;font-weight:700!important;
@@ -115,6 +120,21 @@ hr{border:none!important;border-top:1px solid var(--border)!important;margin:1.5
 </style>
 """, unsafe_allow_html=True)
 
+components.html("""
+<script>
+(function() {
+  function keepSidebarOpen() {
+    var sidebar = parent.document.querySelector('section[data-testid="stSidebar"]');
+    if (sidebar && sidebar.getAttribute('aria-expanded') === 'false') {
+      var btn = parent.document.querySelector('[data-testid="stSidebarCollapseButton"]');
+      if (btn) btn.click();
+    }
+  }
+  setInterval(keepSidebarOpen, 300);
+})();
+</script>
+""", height=0)
+
 # ─────────────────────────────────────────────────────────────────────────────
 # CONSTANTES
 # ─────────────────────────────────────────────────────────────────────────────
@@ -122,6 +142,120 @@ NOMES_MES = {1:"Janeiro",2:"Fevereiro",3:"Março",4:"Abril",5:"Maio",6:"Junho",
              7:"Julho",8:"Agosto",9:"Setembro",10:"Outubro",11:"Novembro",12:"Dezembro"}
 NOMES_DIA = {1:"Segunda-feira",2:"Terça-feira",3:"Quarta-feira",
              4:"Quinta-feira",5:"Sexta-feira",6:"Sábado",7:"Domingo"}
+NOMES_AEROPORTO = {
+  "ABI":"ABI — Abilene, TX","ABQ":"ABQ — Albuquerque, NM","ABR":"ABR — Aberdeen, SD",
+  "ABY":"ABY — Albany, GA","ACT":"ACT — Waco, TX","ACV":"ACV — Arcata/Eureka, CA",
+  "ACY":"ACY — Atlantic City, NJ","ADK":"ADK — Adak, AK","ADQ":"ADQ — Kodiak, AK",
+  "AEX":"AEX — Alexandria, LA","AGS":"AGS — Augusta, GA","ALB":"ALB — Albany, NY",
+  "ALW":"ALW — Walla Walla, WA","AMA":"AMA — Amarillo, TX","ANC":"ANC — Anchorage, AK",
+  "APN":"APN — Alpena, MI","ASE":"ASE — Aspen, CO","ATL":"ATL — Atlanta, GA",
+  "ATW":"ATW — Appleton, WI","AUS":"AUS — Austin, TX","AVL":"AVL — Asheville, NC",
+  "AVP":"AVP — Wilkes-Barre/Scranton, PA","AZA":"AZA — Mesa (Phoenix), AZ",
+  "AZO":"AZO — Kalamazoo, MI","BDL":"BDL — Hartford, CT","BET":"BET — Bethel, AK",
+  "BFF":"BFF — Scottsbluff, NE","BFL":"BFL — Bakersfield, CA","BGM":"BGM — Binghamton, NY",
+  "BGR":"BGR — Bangor, ME","BHM":"BHM — Birmingham, AL","BIH":"BIH — Bishop, CA",
+  "BIL":"BIL — Billings, MT","BIS":"BIS — Bismarck, ND","BJI":"BJI — Bemidji, MN",
+  "BLI":"BLI — Bellingham, WA","BLV":"BLV — Belleville, IL","BMI":"BMI — Bloomington, IL",
+  "BNA":"BNA — Nashville, TN","BOI":"BOI — Boise, ID","BOS":"BOS — Boston, MA",
+  "BPT":"BPT — Beaumont, TX","BQK":"BQK — Brunswick, GA","BQN":"BQN — Aguadilla, PR",
+  "BRD":"BRD — Brainerd, MN","BRO":"BRO — Brownsville, TX","BRW":"BRW — Barrow, AK",
+  "BTM":"BTM — Butte, MT","BTR":"BTR — Baton Rouge, LA","BTV":"BTV — Burlington, VT",
+  "BUF":"BUF — Buffalo, NY","BUR":"BUR — Burbank, CA","BWI":"BWI — Baltimore, MD",
+  "BZN":"BZN — Bozeman, MT","CAE":"CAE — Columbia, SC","CAK":"CAK — Akron/Canton, OH",
+  "CDC":"CDC — Cedar City, UT","CDV":"CDV — Cordova, AK","CHA":"CHA — Chattanooga, TN",
+  "CHO":"CHO — Charlottesville, VA","CHS":"CHS — Charleston, SC","CID":"CID — Cedar Rapids, IA",
+  "CIU":"CIU — Sault Ste. Marie, MI","CKB":"CKB — Clarksburg, WV","CLE":"CLE — Cleveland, OH",
+  "CLL":"CLL — College Station, TX","CLT":"CLT — Charlotte, NC","CMH":"CMH — Columbus, OH",
+  "CMI":"CMI — Champaign, IL","CMX":"CMX — Hancock, MI","CNY":"CNY — Moab, UT",
+  "COS":"COS — Colorado Springs, CO","COU":"COU — Columbia, MO","CPR":"CPR — Casper, WY",
+  "CRP":"CRP — Corpus Christi, TX","CRW":"CRW — Charleston, WV","CSG":"CSG — Columbus, GA",
+  "CVG":"CVG — Cincinnati, KY","CWA":"CWA — Wausau, WI","CYS":"CYS — Cheyenne, WY",
+  "DAB":"DAB — Daytona Beach, FL","DAL":"DAL — Dallas Love Field, TX","DAY":"DAY — Dayton, OH",
+  "DCA":"DCA — Washington Reagan, DC","DDC":"DDC — Dodge City, KS","DEC":"DEC — Decatur, IL",
+  "DEN":"DEN — Denver, CO","DFW":"DFW — Dallas/Fort Worth, TX","DHN":"DHN — Dothan, AL",
+  "DIK":"DIK — Dickinson, ND","DLH":"DLH — Duluth, MN","DRO":"DRO — Durango, CO",
+  "DSM":"DSM — Des Moines, IA","DTW":"DTW — Detroit, MI","DVL":"DVL — Devils Lake, ND",
+  "ECP":"ECP — Panama City Beach, FL","EGE":"EGE — Eagle/Vail, CO","EKO":"EKO — Elko, NV",
+  "ELM":"ELM — Elmira, NY","ELP":"ELP — El Paso, TX","ESC":"ESC — Escanaba, MI",
+  "EUG":"EUG — Eugene, OR","EVV":"EVV — Evansville, IN","EWR":"EWR — Newark, NJ",
+  "EYW":"EYW — Key West, FL","FAI":"FAI — Fairbanks, AK","FAR":"FAR — Fargo, ND",
+  "FAT":"FAT — Fresno, CA","FAY":"FAY — Fayetteville, NC","FCA":"FCA — Kalispell, MT",
+  "FLG":"FLG — Flagstaff, AZ","FLL":"FLL — Fort Lauderdale, FL","FNT":"FNT — Flint, MI",
+  "FOD":"FOD — Fort Dodge, IA","FSD":"FSD — Sioux Falls, SD","FSM":"FSM — Fort Smith, AR",
+  "FWA":"FWA — Fort Wayne, IN","GCC":"GCC — Gillette, WY","GCK":"GCK — Garden City, KS",
+  "GEG":"GEG — Spokane, WA","GFK":"GFK — Grand Forks, ND","GGG":"GGG — Longview, TX",
+  "GJT":"GJT — Grand Junction, CO","GNV":"GNV — Gainesville, FL","GPT":"GPT — Gulfport, MS",
+  "GRB":"GRB — Green Bay, WI","GRI":"GRI — Grand Island, NE","GRK":"GRK — Killeen, TX",
+  "GRR":"GRR — Grand Rapids, MI","GSO":"GSO — Greensboro, NC","GSP":"GSP — Greenville, SC",
+  "GTF":"GTF — Great Falls, MT","GTR":"GTR — Columbus/Starkville, MS","GUC":"GUC — Gunnison, CO",
+  "GUM":"GUM — Guam, GU","HDN":"HDN — Hayden, CO","HGR":"HGR — Hagerstown, MD",
+  "HHH":"HHH — Hilton Head, SC","HIB":"HIB — Hibbing, MN","HLN":"HLN — Helena, MT",
+  "HNL":"HNL — Honolulu, HI","HOU":"HOU — Houston Hobby, TX","HPN":"HPN — White Plains, NY",
+  "HRL":"HRL — Harlingen, TX","HSV":"HSV — Huntsville, AL","HTS":"HTS — Huntington, WV",
+  "HYS":"HYS — Hays, KS","IAD":"IAD — Washington Dulles, DC","IAG":"IAG — Niagara Falls, NY",
+  "IAH":"IAH — Houston Intercontinental, TX","ICT":"ICT — Wichita, KS","IDA":"IDA — Idaho Falls, ID",
+  "ILM":"ILM — Wilmington, NC","IMT":"IMT — Iron Mountain, MI","IND":"IND — Indianapolis, IN",
+  "INL":"INL — International Falls, MN","ISP":"ISP — Long Island/Islip, NY",
+  "ITH":"ITH — Ithaca, NY","ITO":"ITO — Hilo, HI","JAC":"JAC — Jackson Hole, WY",
+  "JAN":"JAN — Jackson, MS","JAX":"JAX — Jacksonville, FL","JFK":"JFK — New York JFK, NY",
+  "JLN":"JLN — Joplin, MO","JMS":"JMS — Jamestown, ND","JNU":"JNU — Juneau, AK",
+  "JST":"JST — Johnstown, PA","KOA":"KOA — Kailua-Kona, HI","KTN":"KTN — Ketchikan, AK",
+  "LAN":"LAN — Lansing, MI","LAR":"LAR — Laramie, WY","LAS":"LAS — Las Vegas, NV",
+  "LAW":"LAW — Lawton, OK","LAX":"LAX — Los Angeles, CA","LBB":"LBB — Lubbock, TX",
+  "LBE":"LBE — Latrobe, PA","LBF":"LBF — North Platte, NE","LBL":"LBL — Liberal, KS",
+  "LCH":"LCH — Lake Charles, LA","LCK":"LCK — Columbus, OH","LEX":"LEX — Lexington, KY",
+  "LFT":"LFT — Lafayette, LA","LGA":"LGA — New York LaGuardia, NY","LGB":"LGB — Long Beach, CA",
+  "LIH":"LIH — Lihue, HI","LIT":"LIT — Little Rock, AR","LNK":"LNK — Lincoln, NE",
+  "LRD":"LRD — Laredo, TX","LSE":"LSE — La Crosse, WI","LWS":"LWS — Lewiston, ID",
+  "MAF":"MAF — Midland, TX","MBS":"MBS — Saginaw, MI","MCI":"MCI — Kansas City, MO",
+  "MCO":"MCO — Orlando, FL","MCW":"MCW — Mason City, IA","MDT":"MDT — Harrisburg, PA",
+  "MDW":"MDW — Chicago Midway, IL","MEI":"MEI — Meridian, MS","MEM":"MEM — Memphis, TN",
+  "MFE":"MFE — McAllen, TX","MFR":"MFR — Medford, OR","MGM":"MGM — Montgomery, AL",
+  "MHK":"MHK — Manhattan, KS","MHT":"MHT — Manchester, NH","MIA":"MIA — Miami, FL",
+  "MKE":"MKE — Milwaukee, WI","MLB":"MLB — Melbourne, FL","MLI":"MLI — Moline, IL",
+  "MLU":"MLU — Monroe, LA","MOB":"MOB — Mobile, AL","MOT":"MOT — Minot, ND",
+  "MQT":"MQT — Marquette, MI","MRY":"MRY — Monterey, CA","MSN":"MSN — Madison, WI",
+  "MSO":"MSO — Missoula, MT","MSP":"MSP — Minneapolis, MN","MSY":"MSY — New Orleans, LA",
+  "MTJ":"MTJ — Montrose, CO","MYR":"MYR — Myrtle Beach, SC","OAJ":"OAJ — Jacksonville, NC",
+  "OAK":"OAK — Oakland, CA","OGG":"OGG — Kahului (Maui), HI","OKC":"OKC — Oklahoma City, OK",
+  "OMA":"OMA — Omaha, NE","OME":"OME — Nome, AK","ONT":"ONT — Ontario, CA",
+  "ORD":"ORD — Chicago O'Hare, IL","ORF":"ORF — Norfolk, VA","ORH":"ORH — Worcester, MA",
+  "OTH":"OTH — North Bend, OR","OTZ":"OTZ — Kotzebue, AK","PAE":"PAE — Everett, WA",
+  "PBG":"PBG — Plattsburgh, NY","PBI":"PBI — West Palm Beach, FL","PDX":"PDX — Portland, OR",
+  "PGD":"PGD — Punta Gorda, FL","PHL":"PHL — Philadelphia, PA","PHX":"PHX — Phoenix, AZ",
+  "PIA":"PIA — Peoria, IL","PIB":"PIB — Hattiesburg, MS","PIE":"PIE — St. Petersburg, FL",
+  "PIH":"PIH — Pocatello, ID","PIT":"PIT — Pittsburgh, PA","PLN":"PLN — Pellston, MI",
+  "PNS":"PNS — Pensacola, FL","PPG":"PPG — Pago Pago, AS","PRC":"PRC — Prescott, AZ",
+  "PSC":"PSC — Pasco, WA","PSE":"PSE — Ponce, PR","PSG":"PSG — Petersburg, AK",
+  "PSM":"PSM — Portsmouth, NH","PSP":"PSP — Palm Springs, CA","PVD":"PVD — Providence, RI",
+  "PVU":"PVU — Provo, UT","PWM":"PWM — Portland, ME","RAP":"RAP — Rapid City, SD",
+  "RDD":"RDD — Redding, CA","RDM":"RDM — Redmond, OR","RDU":"RDU — Raleigh-Durham, NC",
+  "RFD":"RFD — Rockford, IL","RHI":"RHI — Rhinelander, WI","RIC":"RIC — Richmond, VA",
+  "RIW":"RIW — Riverton, WY","RKS":"RKS — Rock Springs, WY","RNO":"RNO — Reno, NV",
+  "ROA":"ROA — Roanoke, VA","ROC":"ROC — Rochester, NY","ROW":"ROW — Roswell, NM",
+  "RST":"RST — Rochester, MN","RSW":"RSW — Fort Myers, FL","SAF":"SAF — Santa Fe, NM",
+  "SAN":"SAN — San Diego, CA","SAT":"SAT — San Antonio, TX","SAV":"SAV — Savannah, GA",
+  "SBA":"SBA — Santa Barbara, CA","SBN":"SBN — South Bend, IN","SBP":"SBP — San Luis Obispo, CA",
+  "SCC":"SCC — Deadhorse, AK","SCE":"SCE — State College, PA","SCK":"SCK — Stockton, CA",
+  "SDF":"SDF — Louisville, KY","SEA":"SEA — Seattle, WA","SFB":"SFB — Sanford, FL",
+  "SFO":"SFO — San Francisco, CA","SGF":"SGF — Springfield, MO","SGU":"SGU — St. George, UT",
+  "SHR":"SHR — Sheridan, WY","SHV":"SHV — Shreveport, LA","SIT":"SIT — Sitka, AK",
+  "SJC":"SJC — San Jose, CA","SJT":"SJT — San Angelo, TX","SJU":"SJU — San Juan, PR",
+  "SLC":"SLC — Salt Lake City, UT","SLN":"SLN — Salina, KS","SMF":"SMF — Sacramento, CA",
+  "SMX":"SMX — Santa Maria, CA","SNA":"SNA — Orange County, CA","SPI":"SPI — Springfield, IL",
+  "SPN":"SPN — Saipan, MP","SPS":"SPS — Wichita Falls, TX","SRQ":"SRQ — Sarasota, FL",
+  "STC":"STC — St. Cloud, MN","STL":"STL — St. Louis, MO","STS":"STS — Santa Rosa, CA",
+  "STT":"STT — St. Thomas, USVI","STX":"STX — St. Croix, USVI","SUN":"SUN — Sun Valley, ID",
+  "SUX":"SUX — Sioux City, IA","SWF":"SWF — Newburgh, NY","SWO":"SWO — Stillwater, OK",
+  "SYR":"SYR — Syracuse, NY","TLH":"TLH — Tallahassee, FL","TOL":"TOL — Toledo, OH",
+  "TPA":"TPA — Tampa, FL","TRI":"TRI — Tri-Cities, TN","TTN":"TTN — Trenton, NJ",
+  "TUL":"TUL — Tulsa, OK","TUS":"TUS — Tucson, AZ","TVC":"TVC — Traverse City, MI",
+  "TWF":"TWF — Twin Falls, ID","TXK":"TXK — Texarkana, AR","TYR":"TYR — Tyler, TX",
+  "TYS":"TYS — Knoxville, TN","USA":"USA — Concord, NC","VCT":"VCT — Victoria, TX",
+  "VEL":"VEL — Vernal, UT","VLD":"VLD — Valdosta, GA","VPS":"VPS — Fort Walton Beach, FL",
+  "WRG":"WRG — Wrangell, AK","XNA":"XNA — Fayetteville/Rogers, AR","XWA":"XWA — Williston, ND",
+  "YAK":"YAK — Yakutat, AK","YUM":"YUM — Yuma, AZ",
+}
 C_RED="#EF4444"; C_GREEN="#10B981"; C_BLUE="#1565FF"; C_CYAN="#00D4FF"; C_AMBER="#F59E0B"
 BG_CARD="#0F1729"
 PL = dict(paper_bgcolor="rgba(0,0,0,0)",plot_bgcolor="rgba(0,0,0,0)",
@@ -259,7 +393,7 @@ with st.sidebar:
                 'letter-spacing:.02em;margin-bottom:1rem">ML · Previsão de Cancelamentos EUA 2024</div>',
                 unsafe_allow_html=True)
     st.divider()
-    pagina = st.radio("nav", options=["  Dashboard","  Previsão","  Sobre"],
+    pagina = st.radio("nav", options=["  Dashboard","  Previsão","  Impacto","  Sobre"],
                       label_visibility="collapsed")
     st.divider()
     if "Dashboard" in pagina:
@@ -405,7 +539,8 @@ elif "Previsão" in pagina:
             with c2:
                 st.markdown('<div class="sl">Dados do voo</div>', unsafe_allow_html=True)
                 aeroportos = sorted([c.replace("origin_","") for c in feature_names if c.startswith("origin_")])
-                aeroporto  = st.selectbox("Aeroporto de origem (IATA)", options=aeroportos,
+                aeroporto  = st.selectbox("Aeroporto de origem", options=aeroportos,
+                                          format_func=lambda ap: NOMES_AEROPORTO.get(ap, ap),
                                           key=f"ap_{form_key}")
                 distancia  = st.number_input("Distância (milhas)", min_value=50, max_value=5000,
                                              value=800, step=50, key=f"dist_{form_key}")
@@ -575,6 +710,167 @@ ou decisões operacionais das companhias aéreas — os principais determinantes
 # ─────────────────────────────────────────────────────────────────────────────
 # SOBRE
 # ─────────────────────────────────────────────────────────────────────────────
+elif "Impacto" in pagina:
+    st.markdown('<div class="ph"><h1>Impacto Operacional e Económico</h1></div>'
+                '<div class="ps">Como o modelo FlightSense gera valor real para companhias aéreas e aeroportos</div>',
+                unsafe_allow_html=True)
+
+    # ── Contexto ──────────────────────────────────────────────────────────────
+    st.markdown("""
+    <div style="background:#0F1729;border:1px solid rgba(21,101,255,.15);border-radius:12px;
+    padding:1.4rem 1.8rem;margin-bottom:1.5rem;line-height:1.75;color:#94A3B8;font-size:.9rem">
+    Os modelos <b style="color:#E8EDF8">HistGradient Boosting</b> (cancelamentos) e
+    <b style="color:#E8EDF8">XGBoost</b> (atrasos) foram treinados sobre mais de <b style="color:#00D4FF">1 milhão de voos</b>
+    reais (EUA, 2024) e são capazes de sinalizar perturbações <b style="color:#E8EDF8">antes da partida</b>,
+    sem aceder a dados meteorológicos em tempo real.<br><br>
+    Cada cancelamento detetado antecipadamente permite à companhia aérea realocar tripulações,
+    notificar passageiros e gerir gates com maior margem de tempo — reduzindo os custos
+    operacionais associados a perturbações de última hora.
+    </div>""", unsafe_allow_html=True)
+
+    # ── Calculadora ───────────────────────────────────────────────────────────
+    st.markdown('<div class="sl">Calculadora de Impacto Económico</div>', unsafe_allow_html=True)
+    st.markdown('<div style="color:#64748B;font-size:.83rem;margin-bottom:1rem">Ajusta os parâmetros à realidade da tua companhia aérea para estimar o valor mensal e anual do modelo.</div>', unsafe_allow_html=True)
+
+    col_inp, col_res = st.columns([1, 1], gap="large")
+
+    with col_inp:
+        st.markdown('<div class="sl">Parâmetros da companhia</div>', unsafe_allow_html=True)
+        n_voos      = st.number_input("Voos por mês", min_value=100, max_value=100000, value=5000, step=100,
+                                       help="Total de voos operados mensalmente")
+        custo_canc  = st.number_input("Custo médio por cancelamento não antecipado (€)", min_value=1000, max_value=500000,
+                                       value=45000, step=1000,
+                                       help="Inclui compensações, realojamento, custos de tripulação e reputação")
+        custo_atraso = st.number_input("Custo médio por atraso não antecipado (€)", min_value=500, max_value=100000,
+                                        value=8000, step=500,
+                                        help="Inclui combustível extra, taxas aeroportuárias e compensações")
+        custo_fp    = st.number_input("Custo de um falso alerta (€)", min_value=0, max_value=5000,
+                                       value=300, step=50,
+                                       help="Custo de rever e descartar um alerta errado do modelo")
+
+    with col_res:
+        # Cálculos — cancelamentos
+        canc_mes        = n_voos * (TAXA_BASE / 100)
+        canc_detetados  = canc_mes * RECALL                          # recall=0.266
+        fp_canc         = canc_detetados / 0.105 * (1 - 0.105)      # precision=0.105
+        poupanca_canc   = canc_detetados * custo_canc - fp_canc * custo_fp
+
+        # Cálculos — atrasos
+        atrasos_mes      = n_voos * (TAXA_BASE_DEL / 100)
+        atrasos_det      = atrasos_mes * RECALL_DEL                  # recall=0.396
+        fp_del           = atrasos_det / 0.227 * (1 - 0.227)        # precision=0.227
+        poupanca_atrasos = atrasos_det * custo_atraso - fp_del * custo_fp
+
+        poupanca_total   = max(poupanca_canc, 0) + max(poupanca_atrasos, 0)
+        poupanca_anual   = poupanca_total * 12
+
+        st.markdown('<div class="sl">Estimativa mensal</div>', unsafe_allow_html=True)
+
+        def kpi_box(label, value, sub, color="#00D4FF"):
+            return (f'<div style="background:#0F1729;border:1px solid rgba(21,101,255,.15);'
+                    f'border-radius:10px;padding:1rem 1.2rem;margin-bottom:.75rem">'
+                    f'<div style="font-family:\'JetBrains Mono\';font-size:.68rem;color:#3D506B;'
+                    f'letter-spacing:.08em;margin-bottom:.3rem">{label}</div>'
+                    f'<div style="font-size:1.6rem;font-weight:700;color:{color};'
+                    f'font-family:\'JetBrains Mono\'">{value}</div>'
+                    f'<div style="font-size:.75rem;color:#64748B;margin-top:.2rem">{sub}</div></div>')
+
+        st.markdown(
+            kpi_box("CANCELAMENTOS DETETADOS / MÊS",
+                    f"{canc_detetados:.0f}",
+                    f"de {canc_mes:.0f} esperados · {RECALL*100:.0f}% recall") +
+            kpi_box("POUPANÇA EST. — CANCELAMENTOS",
+                    f"€ {max(poupanca_canc,0):,.0f}",
+                    f"{canc_detetados:.0f} detetados × €{custo_canc:,} − {fp_canc:.0f} FP × €{custo_fp}",
+                    color="#10B981") +
+            kpi_box("ATRASOS DETETADOS / MÊS",
+                    f"{atrasos_det:.0f}",
+                    f"de {atrasos_mes:.0f} esperados · {RECALL_DEL*100:.0f}% recall") +
+            kpi_box("POUPANÇA EST. — ATRASOS",
+                    f"€ {max(poupanca_atrasos,0):,.0f}",
+                    f"{atrasos_det:.0f} detetados × €{custo_atraso:,} − {fp_del:.0f} FP × €{custo_fp}",
+                    color="#10B981"),
+            unsafe_allow_html=True)
+
+    # Total anual em destaque
+    st.divider()
+    ta1, ta2, ta3 = st.columns(3)
+    ta1.metric("Poupança mensal estimada",   f"€ {poupanca_total:,.0f}")
+    ta2.metric("Poupança anual estimada",    f"€ {poupanca_anual:,.0f}",
+               delta=f"+{poupanca_anual/1e6:.2f}M €/ano" if poupanca_anual >= 1e6 else None)
+    ta3.metric("Cancelamentos detetados/ano", f"{canc_detetados*12:.0f}",
+               delta=f"{RECALL*100:.0f}% recall do modelo")
+    st.divider()
+
+    # ── Beneficiários ─────────────────────────────────────────────────────────
+    st.markdown('<div class="sl">Valor por stakeholder</div>', unsafe_allow_html=True)
+    b1, b2, b3 = st.columns(3, gap="large")
+
+    def beneficio_card(col, titulo, items, cor):
+        with col:
+            linhas = "".join(f'<li style="margin-bottom:.4rem">{i}</li>' for i in items)
+            st.markdown(
+                f'<div style="background:#0F1729;border:1px solid {cor};border-radius:12px;'
+                f'padding:1.2rem 1.4rem;height:100%">'
+                f'<div style="font-family:\'JetBrains Mono\';font-size:.72rem;color:{cor};'
+                f'letter-spacing:.08em;margin-bottom:.8rem">{titulo}</div>'
+                f'<ul style="color:#94A3B8;font-size:.82rem;line-height:1.6;'
+                f'padding-left:1.1rem">{linhas}</ul></div>',
+                unsafe_allow_html=True)
+
+    beneficio_card(b1, "COMPANHIAS AÉREAS", [
+        "Realocação antecipada de tripulações e aeronaves",
+        "Redução de custos de compensação de última hora",
+        "Otimização do planeamento de slots",
+        "Menor impacto em cascata na rede de voos",
+    ], "#3B82F6")
+
+    beneficio_card(b2, "AEROPORTOS", [
+        "Gestão proativa de gates e recursos de solo",
+        "Planeamento de pessoal baseado em risco",
+        "Redução de congestionamento em dias críticos",
+        "Informação antecipada sobre rotas de risco",
+    ], "#06B6D4")
+
+    beneficio_card(b3, "PASSAGEIROS", [
+        "Notificação preventiva de perturbações",
+        "Tempo para alternativas de viagem",
+        "Menor tempo em espera sem informação",
+        "Experiência de viagem mais previsível",
+    ], "#10B981")
+
+    st.divider()
+
+    # ── Tabela comparativa ────────────────────────────────────────────────────
+    st.markdown('<div class="sl">Sem modelo vs. com modelo FlightSense</div>', unsafe_allow_html=True)
+    comp = pd.DataFrame({
+        "Situação": ["Cancelamentos antecipados", "Tempo de reação", "Custo médio por evento",
+                     "Satisfação do passageiro", "Planeamento operacional"],
+        "Sem Modelo": ["Reativo — detetado no momento",
+                       "< 1 hora (impossível planear)",
+                       f"€ {custo_canc:,} por cancelamento",
+                       "Baixa — surpresa operacional",
+                       "Baseado em histórico manual"],
+        "Com FlightSense": [f"{RECALL*100:.0f}% detetados antecipadamente",
+                            "Horas/dias de antecedência",
+                            f"€ {custo_canc * (1 - RECALL * 0.7):,.0f} (redução estimada)",
+                            "Alta — comunicação proativa",
+                            "Orientado por dados e ML"],
+    })
+    st.dataframe(comp, hide_index=True, use_container_width=True)
+
+    # ── Limitações honestas ───────────────────────────────────────────────────
+    st.divider()
+    with st.expander("  Limitações e pressupostos do modelo de impacto"):
+        st.markdown("""
+        - Os valores económicos são **estimativas** baseadas em benchmarks da indústria e nos parâmetros introduzidos — não são garantias de poupança.
+        - O modelo tem **Recall de 26.6%** para cancelamentos: deteta 1 em cada 4, não todos.
+        - Os **falsos positivos** (alertas incorretos) geram custos de revisão que foram incluídos no cálculo.
+        - O impacto real depende da **velocidade de resposta operacional** após o alerta.
+        - O modelo foi treinado apenas com dados de **2024 (EUA)** — padrões noutros contextos podem diferir.
+        - Não inclui dados meteorológicos em tempo real — a principal fonte de melhoria futura.
+        """)
+
 elif "Sobre" in pagina:
     st.markdown('<div class="ph"><h1>Sobre o Projeto</h1></div>'
                 '<div class="ps">FlightSense · Análise e Previsão de Cancelamentos EUA 2024</div>',
