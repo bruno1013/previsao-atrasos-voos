@@ -16,7 +16,6 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
-import streamlit.components.v1 as components
 
 warnings.filterwarnings("ignore")
 
@@ -147,7 +146,7 @@ header [data-testid="collapsedControl"]{visibility:visible!important;pointer-eve
 </style>
 """, unsafe_allow_html=True)
 
-components.html("""
+st.iframe("""
 <script>
 (function() {
   function toggleSidebar() {
